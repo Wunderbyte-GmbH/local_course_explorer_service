@@ -109,6 +109,7 @@ class courses_provider extends external_api
                 }
                 $cardcontent->mc_moodle_kursdauer = $durationfield->get_options()[$metadata['mc_moodle_kursdauer']];
                 $cardcontent->mc_moodle_format = $typefield->get_options()[$metadata['mc_moodle_format']];
+                $cardcontent->ismaterial = isset($metadata['ismaterial']) && $metadata['ismaterial'];
                 $cardcontent->mc_moodle_themen = [];
                 foreach ($metadata['mc_moodle_themen'] as $topicid) {
                     if ($topicid === null || $topicid === "") continue;
@@ -159,6 +160,7 @@ class courses_provider extends external_api
                         )
                     ),
                     'mc_moodle_kursdauer' => new external_value(PARAM_TEXT, 'course duration'),
+                    'ismaterial' => new external_value(PARAM_BOOL, 'ismaterial'),
                     'mc_moodle_format' => new external_value(PARAM_TEXT, 'course type'),
                     'mc_moodle_themen' => new external_multiple_structure(
                         new external_single_structure(

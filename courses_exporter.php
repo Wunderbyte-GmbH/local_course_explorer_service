@@ -34,7 +34,12 @@ class courses_exporter extends external_api
             $languagefield = $courserepository->get_field_controller('mc_moodle_sprache', 'select');
             $topicfield = $courserepository->get_field_controller('mc_moodle_themen', 'multiselect');
             $maingroup = $courserepository->get_field_controller('mc_zielgruppen', 'multiselect');
-
+            $maart1 = $courserepository->get_field_controller('ma_art1', 'select');
+            $maart2 = $courserepository->get_field_controller('ma_art2', 'select');
+            $mathema1 = $courserepository->get_field_controller('ma_thema_1', 'select');
+            $mathema2 = $courserepository->get_field_controller('ma_thema_2', 'select');
+            $mathema3 = $courserepository->get_field_controller('ma_thema_3', 'select');
+            $agegroups = $courserepository->get_field_controller('age_groups', 'multiselect');
         } catch (Exception $e) {
             echo $e->getMessage();
             exit;
@@ -142,6 +147,13 @@ class courses_exporter extends external_api
                         'value' => \customfield_multiselect\field_controller::get_options_array($maingroup)[$targetgroupid]
                     ];
                 }
+                $cardcontent->ma_age_groups = [];
+                foreach ($metadata['age_groups'] as $targetgroupid) {
+                    $cardcontent->ma_age_groups[] = [
+                        'id' => (int)$targetgroupid,
+                        'value' => \customfield_multiselect\field_controller::get_options_array($agegroups)[$targetgroupid]
+                    ];
+                }
                 $cardcontent->mc_format_text = self::_evaluate($typefield->get_options()[$metadata['mc_moodle_format']]);
                 $cardcontent->mc_format = $metadata['mc_moodle_format'];
                 $cardcontent->mc_moodle_level_text = self::_evaluate($levelfield->get_options()[$metadata['mc_moodle_level']]);
@@ -200,6 +212,8 @@ class courses_exporter extends external_api
                 $cardcontent->mc_moodle_empfehlungsbild = $metadata['mc_moodle_empfehlungsbild'] ?: $CFG->local_course_explorer_service_fallback_img_url;
                 $cardcontent->mc_moodle_barrierearm_bool = isset($metadata['mc_moodle_barrierearm']) && $metadata['mc_moodle_barrierearm'];
                 $cardcontent->mc_moodle_barrierearm = (int) $cardcontent->mc_moodle_barrierearm_bool;
+                $cardcontent->isdraft_bool = isset($metadata['isdraft']) && $metadata['isdraft'];
+                $cardcontent->isdraft = (int) $cardcontent->isdraft_bool;
                 $cardcontent->mc_moodle_video = self::_format_mintcampus_get_video($course->id) ? self::_get_teaser_endpoint_url('video', $course->id) : null;
                 $cardcontent->mc_moodle_image = self::_format_mintcampus_get_image($course->id) ? self::_get_teaser_endpoint_url('image', $course->id) : self::_evaluate(null);
 
@@ -216,6 +230,16 @@ class courses_exporter extends external_api
                 $cardcontent->mc_moodle_score = $rating->score;
                 $cardcontent->mc_moodle_reviewsnum = $rating->reviewsnum;
 
+                $cardcontent->kokreativ = isset($metadata['kokreativ']) && $metadata['kokreativ'];
+
+                // Material.
+                $cardcontent->ismaterial = isset($metadata['ismaterial']) && $metadata['ismaterial'];
+
+                $cardcontent->ma_art1 = self::_evaluate($maart1->get_options()[$metadata['ma_art1']]);
+                $cardcontent->ma_art2 = self::_evaluate($maart2->get_options()[$metadata['ma_art2']]);
+                $cardcontent->ma_thema_1 = self::_evaluate($mathema1->get_options()[$metadata['ma_thema_1']]);
+                $cardcontent->ma_thema_2 = self::_evaluate($mathema2->get_options()[$metadata['ma_thema_2']]);
+                $cardcontent->ma_thema_3 = self::_evaluate($mathema3->get_options()[$metadata['ma_thema_3']]);
                 global $PAGE;
                 require_once($CFG->dirroot . '/enrol/locallib.php');
                 $manager = new course_enrolment_manager($PAGE, $course);
@@ -274,6 +298,8 @@ class courses_exporter extends external_api
                     'mc_moodle_sprache' => new external_value(PARAM_INT, 'course language id'),
                     'mc_moodle_barrierearm_bool' => new external_value(PARAM_BOOL, 'produced by MINT-Campus'),
                     'mc_moodle_barrierearm' => new external_value(PARAM_INT, 'produced by MINT-Campus'),
+                    'isdraft_bool' => new external_value(PARAM_BOOL, 'produced by MINT-Campus'),
+                    'isdraft' => new external_value(PARAM_INT, 'produced by MINT-Campus'),
                     'mc_themen' => new external_multiple_structure(
                         new external_single_structure(
                             [
@@ -338,6 +364,22 @@ class courses_exporter extends external_api
                     'mc_moodle_score' => new external_value(PARAM_FLOAT, 'course average score'),
                     'mc_moodle_reviewsnum' => new external_value(PARAM_INT, 'number of score reviews'),
                     'mc_moodle_needs_enrolment' => new external_value(PARAM_BOOL, 'requirement to enroll into a course'),
+                    'ismaterial' => new external_value(PARAM_BOOL, 'ismaterial'),
+                    'ma_art1' => new external_value(PARAM_TEXT, 'Art 1'),
+                    'ma_art2' => new external_value(PARAM_TEXT, 'Art 2'),
+                    'kokreativ' => new external_value(PARAM_BOOL, 'kokreativ'),
+                    'ma_thema_1' => new external_value(PARAM_TEXT, 'Thema 1'),
+                    'ma_thema_2' => new external_value(PARAM_TEXT, 'Thema 2'),
+                    'ma_thema_3' => new external_value(PARAM_TEXT, 'Thema 3'),
+                    'ma_age_groups' => new external_multiple_structure(
+                        new external_single_structure(
+                            [
+                                'id' => new external_value(PARAM_INT, 'id'),
+                                'value' => new external_value(PARAM_TEXT, 'value'),
+                            ]
+                        ),
+                        'target groups for a course'
+                    ),
                 ]
             )
         );

@@ -1,5 +1,5 @@
 <?php
-
+require_once($CFG->libdir . '/externallib.php');
 class course_favourite_handler extends external_api
 {
     public static function set_favourite_parameters(): external_function_parameters

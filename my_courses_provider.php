@@ -85,6 +85,8 @@ class my_courses_provider extends external_api
             $cardcontent->MCOriginal = isset($metadata['mcoriginal']) && $metadata['mcoriginal'];
             $cardcontent->duration = $durationfield->get_options()[$metadata['mc_moodle_kursdauer']];
             $cardcontent->courseType = $typefield->get_options()[$metadata['mc_moodle_format']];
+            $cardcontent->ismaterial = isset($metadata['ismaterial']) && $metadata['ismaterial'];
+
             $cardcontent->topics = [];
             foreach ($metadata['mc_moodle_themen'] as $topicid) {
                 if ($topicid === null || $topicid === "") continue;
@@ -119,6 +121,7 @@ class my_courses_provider extends external_api
                     'favourite' => new external_value(PARAM_BOOL, 'favourite status of a course'),
                     'duration' => new external_value(PARAM_TEXT, 'course duration'),
                     'courseType' => new external_value(PARAM_TEXT, 'course type'),
+                    'ismaterial' => new external_value(PARAM_BOOL, 'ismaterial'),
                     'topics' =>  new external_multiple_structure(
                         new external_single_structure(
                             [
