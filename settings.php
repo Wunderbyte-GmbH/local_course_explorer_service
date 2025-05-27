@@ -1,5 +1,4 @@
 <?php
-
 // This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
@@ -17,22 +16,21 @@
 
 defined('MOODLE_INTERNAL') || die;
 
-$plugin_name = 'local_course_explorer_service';
+$pluginname = 'local_course_explorer_service';
 
 if ($hassiteconfig) {
-
     $settings = new theme_boost_admin_settingspage_tabs(
-        $plugin_name,
-        get_string('pluginname', $plugin_name)
+        $pluginname,
+        get_string('pluginname', $pluginname)
     );
 
     $setting = new admin_settingpage(
-        $plugin_name,
+        $pluginname,
         "Wordpress-Moodle Schnittstelle"
     );
 
     $setting->add(new admin_setting_configtext(
-        $plugin_name . '_fallback_img_url',
+        $pluginname . '_fallback_img_url',
         "Fallbackbild",
         "Fallbackbild-URL für Absender und Empfehler",
         "https://mintcampus.org/wp-content/uploads/2023/09/MC_ICO_Ersteller.png"

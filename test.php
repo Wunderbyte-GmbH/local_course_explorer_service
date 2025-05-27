@@ -14,7 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
-
 require_once(__DIR__ . '/../../config.php');
 require_once(__DIR__ . '/courses_exporter.php');
 
@@ -35,5 +34,5 @@ try {
 
 echo $OUTPUT->header();
 echo "<div id='rk_manager'>test</div>";
-echo "<pre>" . var_dump($tagrecords) ."</pre>";
+echo "<pre>" . var_dump($tagrecords) . "</pre>";
 echo $OUTPUT->footer();

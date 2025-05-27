@@ -1,4 +1,18 @@
 <?php
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 require_once(__DIR__ . '/../../config.php');
 require_once($CFG->libdir . '/externallib.php');
@@ -8,19 +22,16 @@ require_once($CFG->libdir . '/enrollib.php');
 
 require_once(__DIR__ . '/classes/course_repository.php');
 
-class courses_exporter extends external_api
-{
-    public static function export_courses_parameters()
-    {
+class courses_exporter extends external_api {
+    public static function export_courses_parameters() {
         return new external_function_parameters([
             'categoryids' => new external_value(
                 PARAM_TEXT,
                 'Ids of top categories, whose courses (sub-categories) are displayed'
-            )
+            ),
         ]);
     }
-    public static function export_courses($categoryids): array
-    {
+    public static function export_courses($categoryids): array {
         global $DB, $CFG;
 
         $courserepository = new course_repository();
@@ -49,18 +60,18 @@ class courses_exporter extends external_api
 
         $categoryids = self::_extract_category_ids_from_input($categoryids);
 
-        $coreCategories = [];
+        $corecategories = [];
         foreach ($categoryids as $categoryid) {
             if (!in_array($categoryid, [7, 6])) {
-                $coreCategories[] = core_course_category::get($categoryid);
+                $corecategories[] = core_course_category::get($categoryid);
             }
         }
 
-        foreach ($coreCategories as $category) {
+        foreach ($corecategories as $category) {
             $targetedcourses = $category->get_courses(
-                array('recursive' => true, 'sort' => array('sortorder' => 1))
+                ['recursive' => true, 'sort' => ['sortorder' => 1]]
             );
-            $targetedcourses = array_filter($targetedcourses, function($course) {
+            $targetedcourses = array_filter($targetedcourses, function ($course) {
                 return $course->visible == 1;
             });
 
@@ -76,7 +87,7 @@ class courses_exporter extends external_api
                 $cardcontent->shortname = $course->shortname;
                 $tagrecords = core_tag_tag::get_item_tags('core', 'course', $course->id);
                 $tags = [];
-                foreach($tagrecords as $tag) {
+                foreach ($tagrecords as $tag) {
                     $tags[] = $tag->rawname;
                     $tags[] = $tag->name;
                 }
@@ -84,7 +95,7 @@ class courses_exporter extends external_api
                 $cardcontent->tags = implode(",", $tags);
                 $cardcontent->category = [
                     'id' => $coursecategory->id,
-                    'value' => $coursecategory->name
+                    'value' => $coursecategory->name,
                 ];
                 $cardcontent->featureimage = self::_evaluate($coursecache->get($course->id));
                 $coursecontext = context_course::instance($course->id);
@@ -96,7 +107,7 @@ class courses_exporter extends external_api
                         'contextid' => $coursecontext->id,
                         'component' => 'course',
                         'filearea' => 'overviewfiles',
-                        'dir' => '.'
+                        'dir' => '.',
                     ]
                 );
                 $timemodified = $DB->get_field_select(
@@ -107,7 +118,7 @@ class courses_exporter extends external_api
                         'contextid' => $coursecontext->id,
                         'component' => 'course',
                         'filearea' => 'overviewfiles',
-                        'dir' => '.'
+                        'dir' => '.',
                     ]
                 );
 
@@ -117,9 +128,9 @@ class courses_exporter extends external_api
                 $rawdescription = $DB->get_field(
                     'course',
                     'summary',
-                    array('id' => $course->id)
+                    ['id' => $course->id]
                 );
-                $cardcontent->content = self::_evaluate(strip_tags($rawdescription, array('<br>','<em>','<strong>', '<a>')));
+                $cardcontent->content = self::_evaluate(strip_tags($rawdescription, ['<br>', '<em>', '<strong>', '<a>']));
 
                 // course custom fields
                 $metadata = $courserepository->get_course_metadata($course->id);
@@ -137,21 +148,21 @@ class courses_exporter extends external_api
                 foreach ($metadata['mc_moodle_zielgruppe'] as $targetgroupid) {
                     $cardcontent->mc_zielgruppe[] = [
                         'id' => (int)$targetgroupid,
-                        'value' => \customfield_multiselect\field_controller::get_options_array($targetfield)[$targetgroupid]
+                        'value' => \customfield_multiselect\field_controller::get_options_array($targetfield)[$targetgroupid],
                     ];
                 }
                 $cardcontent->mc_hauptzielgruppe = [];
                 foreach ($metadata['mc_zielgruppen'] as $targetgroupid) {
                     $cardcontent->mc_hauptzielgruppe[] = [
                         'id' => (int)$targetgroupid,
-                        'value' => \customfield_multiselect\field_controller::get_options_array($maingroup)[$targetgroupid]
+                        'value' => \customfield_multiselect\field_controller::get_options_array($maingroup)[$targetgroupid],
                     ];
                 }
                 $cardcontent->ma_age_groups = [];
                 foreach ($metadata['age_groups'] as $targetgroupid) {
                     $cardcontent->ma_age_groups[] = [
                         'id' => (int)$targetgroupid,
-                        'value' => \customfield_multiselect\field_controller::get_options_array($agegroups)[$targetgroupid]
+                        'value' => \customfield_multiselect\field_controller::get_options_array($agegroups)[$targetgroupid],
                     ];
                 }
                 $cardcontent->mc_format_text = self::_evaluate($typefield->get_options()[$metadata['mc_moodle_format']]);
@@ -168,7 +179,7 @@ class courses_exporter extends external_api
                 foreach ($metadata['mc_moodle_themen'] as $topicid) {
                     $cardcontent->mc_themen[] = [
                         'id' => $topicid,
-                        'value' => \customfield_multiselect\field_controller::get_options_array($topicfield)[$topicid]
+                        'value' => \customfield_multiselect\field_controller::get_options_array($topicfield)[$topicid],
                     ];
                 }
 
@@ -181,13 +192,13 @@ class courses_exporter extends external_api
                 );
                 $cardcontent->mc_moodle_module = [];
                 foreach ($sections as $section) {
-                    $sectionTitle = format_string($section->name);
-                    $sectionDescription = format_text($section->summary, $section->summaryformat);
+                    $sectiontitle = format_string($section->name);
+                    $sectiondescription = format_text($section->summary, $section->summaryformat);
 
-                    if ($sectionTitle || $sectionDescription) {
+                    if ($sectiontitle || $sectiondescription) {
                         $cardcontent->mc_moodle_module[] = [
-                            'mc_moodle_modultitel' => self::_evaluate($sectionTitle),
-                            'mc_moodle_modullernergebnis' => self::_evaluate($sectionDescription)
+                            'mc_moodle_modultitel' => self::_evaluate($sectiontitle),
+                            'mc_moodle_modullernergebnis' => self::_evaluate($sectiondescription),
                         ];
                     }
                 }
@@ -225,7 +236,7 @@ class courses_exporter extends external_api
                         FROM {format_mintcampus_ratings}
                         WHERE courseid = :courseid
                         GROUP BY courseid",
-                    array('courseid' => $course->id)
+                    ['courseid' => $course->id]
                 );
                 $cardcontent->mc_moodle_score = $rating->score;
                 $cardcontent->mc_moodle_reviewsnum = $rating->reviewsnum;
@@ -263,8 +274,7 @@ class courses_exporter extends external_api
      * for matching targets by id rather than by value
      * @return external_multiple_structure
      */
-    public static function export_courses_returns()
-    {
+    public static function export_courses_returns() {
         return new external_multiple_structure(
             new external_single_structure(
                 [
@@ -385,66 +395,58 @@ class courses_exporter extends external_api
         );
     }
 
-    private static function _evaluate($input): string
-    {
+    private static function _evaluate($input): string {
         if (empty($input)) {
             return '';
         }
         return $input;
     }
 
-    private static function _get_image_source_html($inputString): string
-    {
-        if (!$inputString = self::_evaluate($inputString)) {
-            return $inputString;
+    private static function _get_image_source_html($inputstring): string {
+        if (!$inputstring = self::_evaluate($inputstring)) {
+            return $inputstring;
         }
 
-        $html = preg_replace('/\$(.*?)\$/', '<a href="$1" target="_blank">$1</a>', $inputString);
+        $html = preg_replace('/\$(.*?)\$/', '<a href="$1" target="_blank">$1</a>', $inputstring);
 
         return "<span class='image-source'>$html</span>";
     }
 
-    private static function _get_sub_categories_by(array $categoryids): array
-    {
+    private static function _get_sub_categories_by(array $categoryids): array {
         global $DB;
-        list($insql, $categoryids) = $DB->get_in_or_equal($categoryids);
+        [$insql, $categoryids] = $DB->get_in_or_equal($categoryids);
         $sql = "select id, name, parent from {course_categories} where parent {$insql}";
         return $DB->get_records_sql($sql, $categoryids);
     }
-    private static function _sanitize_and_filter_valid($ids): array
-    {
-        $ids = array_map(function($id) {
+    private static function _sanitize_and_filter_valid($ids): array {
+        $ids = array_map(function ($id) {
             return trim($id);
         }, $ids);
 
-        return array_filter($ids, function($id) {
+        return array_filter($ids, function ($id) {
             return is_numeric($id) && $id != 0;
         });
     }
-    private static function _filter_first_level_category_ids($ids): array
-    {
+    private static function _filter_first_level_category_ids($ids): array {
         global $DB;
-        list($insql, $params) = $DB->get_in_or_equal($ids);
+        [$insql, $params] = $DB->get_in_or_equal($ids);
         $topids = $DB->get_records_select('course_categories', "id $insql AND parent = 0", $params, '', 'id');
         return array_column($topids, 'id');
     }
-    private static function _get_children_category_ids($parentids): array
-    {
+    private static function _get_children_category_ids($parentids): array {
         global $DB;
-        list($insql, $params) = $DB->get_in_or_equal($parentids);
+        [$insql, $params] = $DB->get_in_or_equal($parentids);
         $childrenids = $DB->get_records_select('course_categories', "parent $insql", $params, '', 'id');
         return array_column($childrenids, 'id');
     }
-    private static function _get_category_ids_of_level($level): array
-    {
+    private static function _get_category_ids_of_level($level): array {
         global $DB;
         $needle = '/'; // counting slashes in the path
-        $selectsql = 'ROUND((LENGTH(path) - LENGTH(REPLACE(path, "'. $needle .'", ""))) / LENGTH("'. $needle .'")) = ' . $level;
+        $selectsql = 'ROUND((LENGTH(path) - LENGTH(REPLACE(path, "' . $needle . '", ""))) / LENGTH("' . $needle . '")) = ' . $level;
         $categoryids = $DB->get_records_select('course_categories', $selectsql);
         return array_column($categoryids, 'id');
     }
-    private static function _extract_category_ids_from_input(string $input): array
-    {
+    private static function _extract_category_ids_from_input(string $input): array {
         $level = 1;
         if ($input) {
             try {
@@ -459,18 +461,17 @@ class courses_exporter extends external_api
             } catch (\Exception $e) {
                 return [
                     'courses' => [],
-                    'errorMessage' => $e->getMessage()
+                    'errorMessage' => $e->getMessage(),
                 ];
             }
         } else {
             return self::_get_category_ids_of_level($level);
         }
     }
-    private static function _aggregate_learning_goals_from_metadata($metadata): array
-    {
+    private static function _aggregate_learning_goals_from_metadata($metadata): array {
         $num = 3;
         $namebase = 'mc_moodle_lernergebnis_';
-        $learninggoals = array();
+        $learninggoals = [];
         for ($i = 1; $i <= $num; $i++) {
             if (!empty($metadata[$namebase . $i])) {
                 $learninggoals[] = $metadata[$namebase . $i];
@@ -480,26 +481,23 @@ class courses_exporter extends external_api
         return $learninggoals;
     }
 
-    private static function _format_mintcampus_get_video($courseid): ?string
-    {
+    private static function _format_mintcampus_get_video($courseid): ?string {
         return self::_get_file_from_mintcampus_format('video', $courseid);
     }
 
-    private static function _format_mintcampus_get_image($courseid): ?string
-    {
+    private static function _format_mintcampus_get_image($courseid): ?string {
         return self::_get_file_from_mintcampus_format('image', $courseid);
     }
 
-    private static function _get_file_from_mintcampus_format($type, $courseid): ?string
-    {
+    private static function _get_file_from_mintcampus_format($type, $courseid): ?string {
         global $DB;
         $context = \context_course::instance($courseid);
-        $itemid = $DB->get_field('course_format_options', 'value', array(
+        $itemid = $DB->get_field('course_format_options', 'value', [
             'courseid' => $courseid,
             'format' => 'mintcampusformat',
             'sectionid' => 0,
-            'name' => "mintcampuscourse{$type}_filemanager"
-        ));
+            'name' => "mintcampuscourse{$type}_filemanager",
+        ]);
         if (!$itemid) {
             $itemid = file_get_unused_draft_itemid();
         }
@@ -525,13 +523,12 @@ class courses_exporter extends external_api
     /**
      * @throws moodle_exception
      */
-    private static function _get_teaser_endpoint_url(string $type, $courseid): string
-    {
+    private static function _get_teaser_endpoint_url(string $type, $courseid): string {
         $url = (new moodle_url(
             '/local/mintcampus_generic/show_course_teaser.php',
             [
                 'courseid' => $courseid,
-                'type' => $type
+                'type' => $type,
             ]
         ))->__toString();
         $url = str_replace('amp;', '', $url);

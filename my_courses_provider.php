@@ -1,4 +1,18 @@
 <?php
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 global $CFG;
 require_once(__DIR__ . '/../../config.php');
@@ -8,16 +22,13 @@ require_once($CFG->dirroot . '/course/lib.php');
 require_once($CFG->libdir . '/enrollib.php');
 
 require_once(__DIR__ . '/classes/course_repository.php');
-class my_courses_provider extends external_api
-{
-
-    public static function get_my_courses_parameters()
-    {
+class my_courses_provider extends external_api {
+    public static function get_my_courses_parameters() {
         return new external_function_parameters([
             'userid' => new external_value(
                 PARAM_INT,
                 'Id of a user viewing the course'
-            )
+            ),
         ]);
     }
 
@@ -26,8 +37,7 @@ class my_courses_provider extends external_api
      * @throws coding_exception
      * @throws dml_exception
      */
-    public static function get_my_courses($userid): array
-    {
+    public static function get_my_courses($userid): array {
         global $DB;
         $courserepository = new course_repository();
         try {
@@ -44,7 +54,7 @@ class my_courses_provider extends external_api
         $enrolledcourses = enrol_get_users_courses($userid);
         $favcourses = self::_get_user_favourite_courses($userid);
         $diffids = array_diff(array_keys($favcourses), array_keys($enrolledcourses));
-        $favcourses = array_filter($favcourses, function($course) use ($diffids) {
+        $favcourses = array_filter($favcourses, function ($course) use ($diffids) {
             if (in_array($course->id, $diffids)) {
                 return true;
             }
@@ -58,10 +68,10 @@ class my_courses_provider extends external_api
             $cardcontent->title = trim($course->fullname);
             $cardcontent->category = $category->name ?? null;
             $cardcontent->image = $coursecache->get($course->id);
-            $rawdescription =  $DB->get_field(
+            $rawdescription = $DB->get_field(
                 'course',
                 'summary',
-                array('id' => $course->id)
+                ['id' => $course->id]
             );
             $cardcontent->description = strip_tags($rawdescription);
 
@@ -76,7 +86,7 @@ class my_courses_provider extends external_api
                         FROM {format_mintcampus_ratings}
                         WHERE courseid = :courseid
                         GROUP BY courseid",
-                array('courseid' => $course->id)
+                ['courseid' => $course->id]
             );
             $cardcontent->score = $rating->score;
             $cardcontent->reviewsnum = $rating->reviewsnum;
@@ -89,10 +99,12 @@ class my_courses_provider extends external_api
 
             $cardcontent->topics = [];
             foreach ($metadata['mc_moodle_themen'] as $topicid) {
-                if ($topicid === null || $topicid === "") continue;
+                if ($topicid === null || $topicid === "") {
+                    continue;
+                }
                 $cardcontent->topics[] = [
                     'id' => (int)$topicid,
-                    'value' => \customfield_multiselect\field_controller::get_options_array($topicfield)[$topicid]
+                    'value' => \customfield_multiselect\field_controller::get_options_array($topicfield)[$topicid],
                 ];
             }
 
@@ -100,12 +112,11 @@ class my_courses_provider extends external_api
             $cardcontent->senderName = $metadata['mc_moodle_partner_name'] ?: 'Absendername';
             $coursecardcontents[] = $cardcontent;
         }
-//        var_dump($coursecardcontents);die;
+// var_dump($coursecardcontents);die;
         return $coursecardcontents;
     }
 
-    public static function get_my_courses_returns()
-    {
+    public static function get_my_courses_returns() {
         return new external_multiple_structure(
             new external_single_structure(
                 [
@@ -122,28 +133,27 @@ class my_courses_provider extends external_api
                     'duration' => new external_value(PARAM_TEXT, 'course duration'),
                     'courseType' => new external_value(PARAM_TEXT, 'course type'),
                     'ismaterial' => new external_value(PARAM_BOOL, 'ismaterial'),
-                    'topics' =>  new external_multiple_structure(
+                    'topics' => new external_multiple_structure(
                         new external_single_structure(
                             [
                                 'id' => new external_value(PARAM_INT, 'id'),
-                                'value' => new external_value(PARAM_TEXT, 'value')
+                                'value' => new external_value(PARAM_TEXT, 'value'),
                             ]
                         ),
                         'course topics (not related to topic course format)'
                     ),
-                    'senderName' => new external_value(PARAM_TEXT, 'name of a course creator')
+                    'senderName' => new external_value(PARAM_TEXT, 'name of a course creator'),
                 ]
             )
         );
     }
 
-    public static function get_my_course_ids_parameters()
-    {
+    public static function get_my_course_ids_parameters() {
         return new external_function_parameters([
             'useremail' => new external_value(
                 PARAM_TEXT,
                 'Email of a user adding/removing a course to/from favourites'
-            )
+            ),
         ]);
     }
 
@@ -154,24 +164,23 @@ class my_courses_provider extends external_api
      * @return array
      * @throws moodle_exception
      */
-    public static function get_my_course_ids($useremail): array
-    {
+    public static function get_my_course_ids($useremail): array {
         global $DB;
         $userid = $DB->get_field('user', 'id', ['email' => $useremail]);
         if (!$userid) {
             return [
                 'courses' => [],
-                'favorites' => []
+                'favorites' => [],
             ];
         }
 
-        $returndata = array();
+        $returndata = [];
         $courses = enrol_get_users_courses($userid);
         $courseids = array_column($courses, 'id');
         $favouritecourseids = [];
 
         foreach ($courseids as $courseid) {
-            if (self::_is_course_favourite($userid, $courseid)){
+            if (self::_is_course_favourite($userid, $courseid)) {
                 $favouritecourseids[] = $courseid;
             }
         }
@@ -182,17 +191,16 @@ class my_courses_provider extends external_api
         return $returndata;
     }
 
-    public static function get_my_course_ids_returns()
-    {
+    public static function get_my_course_ids_returns() {
         return new external_single_structure(
-            array(
+            [
                 'courses' => new external_multiple_structure(
                     new external_value(PARAM_INT, 'id')
                 ),
                 'favorites' => new external_multiple_structure(
                     new external_value(PARAM_INT, 'id')
                 ),
-            )
+            ]
         );
     }
 
@@ -201,16 +209,17 @@ class my_courses_provider extends external_api
      * @throws coding_exception
      * @throws dml_exception
      */
-    private static function _get_user_favourite_courses($userid)
-    {
+    private static function _get_user_favourite_courses($userid) {
         global $DB;
         $usercontext = \context_user::instance($userid);
         $ufservice = \core_favourites\service_factory::get_service_for_user_context($usercontext);
         $favourites = $ufservice->find_favourites_by_type('core_course', 'courses');
-        if (empty($favourites)) return $favourites;
+        if (empty($favourites)) {
+            return $favourites;
+        }
 
         $favcourseids = array_column($favourites, 'itemid');
-        list($insql, $params) = $DB->get_in_or_equal($favcourseids);
+        [$insql, $params] = $DB->get_in_or_equal($favcourseids);
         return $DB->get_records_select('course', "id $insql", $params, '', 'id,category,fullname');
     }
 
@@ -220,8 +229,7 @@ class my_courses_provider extends external_api
      * @return bool SQL Query that returns resultset containing columns userid, itemid, categoryid, sortorder, fullname, shortname
      * @throws moodle_exception
      */
-    private static function _is_course_favourite($userid, $courseid): bool
-    {
+    private static function _is_course_favourite($userid, $courseid): bool {
         $usercontext = \context_user::instance($userid);
         $ufservice = \core_favourites\service_factory::get_service_for_user_context($usercontext);
         $favourites = $ufservice->find_favourites_by_type('core_course', 'courses');

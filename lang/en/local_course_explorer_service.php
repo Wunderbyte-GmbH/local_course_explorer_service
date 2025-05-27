@@ -17,16 +17,16 @@
 /**
  * Language strings
  *
- * @package    local_adminer
+ * @package    local_course_explorer_service
  * @author Andreas Grabs <moodle@grabs-edv.de>
  * @copyright  Andreas Grabs
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-$string['pluginname'] = 'Course Explorer Service';
-
-$string['wronginput:categoryids'] = 'Provided string of comma-separated category ids contains either a non-numeric value or a 0. Please, correct your input.';
-$string['label'] = "MINT-Campus-Original";
 $string['fallback_recommendation'] = "Dies ist ein Lernangebot, das wir als MINT-Campus-Team gerne mit Euch teilen. Viel Spaß!";
 $string['fallback_recommendation_issuer'] = "MINT-Campus Team";
 $string['for_free'] = "free";
+$string['label'] = "MINT-Campus-Original";
+$string['pluginname'] = 'Course Explorer Service';
+
+$string['wronginput:categoryids'] = 'Provided string of comma-separated category ids contains either a non-numeric value or a 0. Please, correct your input.';

@@ -1,13 +1,25 @@
 <?php
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->dirroot . '/course/lib.php');
 
-class course_repository
-{
-    public function get_course_metadata($courseid)
-    {
+class course_repository {
+    public function get_course_metadata($courseid) {
         $handler = \core_customfield\handler::get_handler('core_course', 'course');
         $data = $handler->get_instance_data($courseid, true);
         $metadata = [];
@@ -18,10 +30,10 @@ class course_repository
                 } else {
                     $metadata[$item->get_field()->get('shortname')] = [];
                 }
-            } elseif (get_class($item) === "customfield_picture\data_controller") {
-                $export_data = $item->export_value();
-                if ($export_data) {
-                    if (preg_match('/<img[^>]+src="([^"]+)"/', $export_data, $matches)) {
+            } else if (get_class($item) === "customfield_picture\data_controller") {
+                $exportdata = $item->export_value();
+                if ($exportdata) {
+                    if (preg_match('/<img[^>]+src="([^"]+)"/', $exportdata, $matches)) {
                         $metadata[$item->get_field()->get('shortname')] = $matches[1];
                     } else {
                         $metadata[$item->get_field()->get('shortname')] = null;
@@ -43,16 +55,15 @@ class course_repository
      * @return void
      * @throws dml_exception
      */
-    public function set_course_metadata($courseid, $filedname, $fielddata, $format = 0)
-    {
+    public function set_course_metadata($courseid, $filedname, $fielddata, $format = 0) {
         global $DB;
 
-        $map = array(
+        $map = [
             'mc_moodle_partner_name' => 'charvalue',
             'mc_moodle_partner_name2' => 'charvalue',
             'mc_moodle_partner_name3' => 'charvalue',
             'mc_moodle_partner_name4' => 'charvalue',
-        );
+        ];
 
         $subsql = '';
         if (isset($map[$filedname]) && $map[$filedname]) {
@@ -66,11 +77,11 @@ class course_repository
                 JOIN {customfield_field} field ON data.fieldid = field.id and field.shortname = :fieldname
                 SET data.value = :fielddata1{$subsql}
                 where data.instanceid = :courseid";
-        $params = array(
+        $params = [
             'fieldname' => $filedname,
             'fielddata1' => $fielddata,
             'courseid' => $courseid,
-        );
+        ];
         if (isset($map[$filedname]) && $map[$filedname]) {
             $params['fielddata2'] = $fielddata;
             if ($format) {
@@ -85,9 +96,9 @@ class course_repository
      * @throws moodle_exception
      * @throws dml_exception
      */
-    public function set_course_custom_field($course_id, $fieldname, $value) {
+    public function set_course_custom_field($courseid, $fieldname, $value) {
         global $DB;
-        $course = (array) $DB->get_record('course', array('id'=>$course_id));
+        $course = (array) $DB->get_record('course', ['id' => $courseid]);
         $course[$fieldname] = $value;
         update_course((object) $course);
     }

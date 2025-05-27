@@ -1,4 +1,18 @@
 <?php
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
 
 require_once(__DIR__ . '/../../config.php');
 require_once($CFG->libdir . '/externallib.php');
@@ -8,10 +22,8 @@ require_once($CFG->libdir . '/enrollib.php');
 
 require_once(__DIR__ . '/classes/course_repository.php');
 
-class courses_provider extends external_api
-{
-    public static function get_course_list_parameters()
-    {
+class courses_provider extends external_api {
+    public static function get_course_list_parameters() {
         return new external_function_parameters([
             'categoryids' => new external_value(
                 PARAM_TEXT,
@@ -20,11 +32,10 @@ class courses_provider extends external_api
             'userid' => new external_value(
                 PARAM_INT,
                 'Id of a user viewing the course block'
-            )
+            ),
         ]);
     }
-    public static function get_course_list($categoryids, $userid): array
-    {
+    public static function get_course_list($categoryids, $userid): array {
         global $DB;
 
         $courserepository = new course_repository();
@@ -43,16 +54,16 @@ class courses_provider extends external_api
 
         $categoryids = self::_extract_category_ids_from_input($categoryids);
 
-        $coreCategories = [];
+        $corecategories = [];
         foreach ($categoryids as $categoryid) {
-            $coreCategories[] = core_course_category::get($categoryid);
+            $corecategories[] = core_course_category::get($categoryid);
         }
 
-        foreach ($coreCategories as $category) {
+        foreach ($corecategories as $category) {
             $targetedcourses = $category->get_courses(
-                array('recursive' => true, 'sort' => array('sortorder' => 1))
+                ['recursive' => true, 'sort' => ['sortorder' => 1]]
             );
-            $targetedcourses = array_filter($targetedcourses, function($course) {
+            $targetedcourses = array_filter($targetedcourses, function ($course) {
                 return $course->visible == 1;
             });
 
@@ -70,13 +81,13 @@ class courses_provider extends external_api
                 $cardcontent->shortname = $course->shortname;
                 $cardcontent->category = [
                     'id' => $coursecategory->id,
-                    'value' => $coursecategory->name
+                    'value' => $coursecategory->name,
                 ];
                 $cardcontent->image = $coursecache->get($course->id);
-                $rawdescription =  $DB->get_field(
+                $rawdescription = $DB->get_field(
                     'course',
                     'summary',
-                    array('id' => $course->id)
+                    ['id' => $course->id]
                 );
                 $cardcontent->description = strip_tags($rawdescription);
 
@@ -91,7 +102,7 @@ class courses_provider extends external_api
                         FROM {format_mintcampus_ratings}
                         WHERE courseid = :courseid
                         GROUP BY courseid",
-                    array('courseid' => $course->id)
+                    ['courseid' => $course->id]
                 );
                 $cardcontent->score = $rating->score;
                 $cardcontent->reviewsnum = $rating->reviewsnum;
@@ -101,10 +112,12 @@ class courses_provider extends external_api
                 $cardcontent->mcoriginal = isset($metadata['mcoriginal']) && $metadata['mcoriginal'];
                 $cardcontent->mc_moodle_zielgruppe = [];
                 foreach ($metadata['mc_moodle_zielgruppe'] as $targetgroupid) {
-                    if (!$targetgroupid) continue;
+                    if (!$targetgroupid) {
+                        continue;
+                    }
                     $cardcontent->mc_moodle_zielgruppe[] = [
                         'id' => $targetgroupid,
-                        'value' => \customfield_multiselect\field_controller::get_options_array($targetfield)[$targetgroupid]
+                        'value' => \customfield_multiselect\field_controller::get_options_array($targetfield)[$targetgroupid],
                     ];
                 }
                 $cardcontent->mc_moodle_kursdauer = $durationfield->get_options()[$metadata['mc_moodle_kursdauer']];
@@ -112,10 +125,12 @@ class courses_provider extends external_api
                 $cardcontent->ismaterial = isset($metadata['ismaterial']) && $metadata['ismaterial'];
                 $cardcontent->mc_moodle_themen = [];
                 foreach ($metadata['mc_moodle_themen'] as $topicid) {
-                    if ($topicid === null || $topicid === "") continue;
+                    if ($topicid === null || $topicid === "") {
+                        continue;
+                    }
                     $cardcontent->mc_moodle_themen[] = [
                         'id' => (int)$topicid,
-                        'value' => \customfield_multiselect\field_controller::get_options_array($topicfield)[$topicid]
+                        'value' => \customfield_multiselect\field_controller::get_options_array($topicfield)[$topicid],
                     ];
                 }
                 $cardcontent->senderName = $metadata['mc_moodle_partner_name'] ?: 'Absendername';
@@ -131,8 +146,7 @@ class courses_provider extends external_api
      * for matching targets by id rather than by value
      * @return external_multiple_structure
      */
-    public static function get_course_list_returns()
-    {
+    public static function get_course_list_returns() {
         return new external_multiple_structure(
             new external_single_structure(
                 [
@@ -171,53 +185,47 @@ class courses_provider extends external_api
                         ),
                         'course topics (not related to topic course format)'
                     ),
-                    'senderName' => new external_value(PARAM_TEXT, 'name of a course creator')
+                    'senderName' => new external_value(PARAM_TEXT, 'name of a course creator'),
                 ]
             )
         );
     }
 
-    private static function _get_sub_categories_by(array $categoryids): array
-    {
+    private static function _get_sub_categories_by(array $categoryids): array {
         global $DB;
-        list($insql, $categoryids) = $DB->get_in_or_equal($categoryids);
+        [$insql, $categoryids] = $DB->get_in_or_equal($categoryids);
         $sql = "select id, name, parent from {course_categories} where parent {$insql}";
         return $DB->get_records_sql($sql, $categoryids);
     }
-    private static function _sanitize_and_filter_valid($ids): array
-    {
-        $ids = array_map(function($id) {
+    private static function _sanitize_and_filter_valid($ids): array {
+        $ids = array_map(function ($id) {
             return trim($id);
         }, $ids);
 
-        return array_filter($ids, function($id) {
+        return array_filter($ids, function ($id) {
             return is_numeric($id) && $id != 0;
         });
     }
-    private static function _filter_first_level_category_ids($ids): array
-    {
+    private static function _filter_first_level_category_ids($ids): array {
         global $DB;
-        list($insql, $params) = $DB->get_in_or_equal($ids);
+        [$insql, $params] = $DB->get_in_or_equal($ids);
         $topids = $DB->get_records_select('course_categories', "id $insql AND parent = 0", $params, '', 'id');
         return array_column($topids, 'id');
     }
-    private static function _get_children_category_ids($parentids): array
-    {
+    private static function _get_children_category_ids($parentids): array {
         global $DB;
-        list($insql, $params) = $DB->get_in_or_equal($parentids);
+        [$insql, $params] = $DB->get_in_or_equal($parentids);
         $childrenids = $DB->get_records_select('course_categories', "parent $insql", $params, '', 'id');
         return array_column($childrenids, 'id');
     }
-    private static function _get_category_ids_of_level($level): array
-    {
+    private static function _get_category_ids_of_level($level): array {
         global $DB;
         $needle = '/'; // counting slashes in the path
-        $selectsql = 'ROUND((LENGTH(path) - LENGTH(REPLACE(path, "'. $needle .'", ""))) / LENGTH("'. $needle .'")) = ' . $level;
+        $selectsql = 'ROUND((LENGTH(path) - LENGTH(REPLACE(path, "' . $needle . '", ""))) / LENGTH("' . $needle . '")) = ' . $level;
         $categoryids = $DB->get_records_select('course_categories', $selectsql);
         return array_column($categoryids, 'id');
     }
-    private static function _extract_category_ids_from_input(string $input): array
-    {
+    private static function _extract_category_ids_from_input(string $input): array {
         $level = 1;
         if ($input) {
             try {

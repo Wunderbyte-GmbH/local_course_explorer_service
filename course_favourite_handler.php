@@ -1,9 +1,22 @@
 <?php
+// This file is part of Moodle - https://moodle.org/
+//
+// Moodle is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Moodle is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Moodle.  If not, see <https://www.gnu.org/licenses/>.
+
 require_once($CFG->libdir . '/externallib.php');
-class course_favourite_handler extends external_api
-{
-    public static function set_favourite_parameters(): external_function_parameters
-    {
+class course_favourite_handler extends external_api {
+    public static function set_favourite_parameters(): external_function_parameters {
         return new external_function_parameters([
             'useremail' => new external_value(
                 PARAM_TEXT,
@@ -27,10 +40,9 @@ class course_favourite_handler extends external_api
             ),
         ]);
     }
-    public static function set_favourite($useremail, $firstname, $lastname, $courseid, $favourite): array
-    {
+    public static function set_favourite($useremail, $firstname, $lastname, $courseid, $favourite): array {
         global $DB, $CFG;
-        require_once($CFG->dirroot.'/user/lib.php');
+        require_once($CFG->dirroot . '/user/lib.php');
 
         try {
             $userid = $DB->get_field('user', 'id', ['email' => $useremail]);
@@ -52,20 +64,32 @@ class course_favourite_handler extends external_api
             }
 
             $ufservice = \core_favourites\service_factory::get_service_for_user_context(\context_user::instance($userid));
-            $favouriteexists = $ufservice->favourite_exists('core_course', 'courses', $courseid,
-                \context_course::instance($courseid));
+            $favouriteexists = $ufservice->favourite_exists(
+                'core_course',
+                'courses',
+                $courseid,
+                \context_course::instance($courseid)
+            );
 
             if ($favourite) {
                 if (!$favouriteexists) {
-                    $ufservice->create_favourite('core_course', 'courses', $courseid,
-                        \context_course::instance($courseid));
+                    $ufservice->create_favourite(
+                        'core_course',
+                        'courses',
+                        $courseid,
+                        \context_course::instance($courseid)
+                    );
                 } else {
                     throw new Exception("Course (id=$courseid) has already been added to favourites.");
                 }
             } else {
                 if ($favouriteexists) {
-                    $ufservice->delete_favourite('core_course', 'courses', $courseid,
-                        \context_course::instance($courseid));
+                    $ufservice->delete_favourite(
+                        'core_course',
+                        'courses',
+                        $courseid,
+                        \context_course::instance($courseid)
+                    );
                 } else {
                     throw new Exception("Course (id=$courseid) is not in favourites.");
                 }
@@ -73,22 +97,21 @@ class course_favourite_handler extends external_api
 
             return [
                 'success' => true,
-                'message' => ''
+                'message' => '',
             ];
         } catch (Exception $e) {
             return [
                 'success' => false,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ];
         }
     }
-    public static function set_favourite_returns(): external_single_structure
-    {
+    public static function set_favourite_returns(): external_single_structure {
         return new external_single_structure(
-            array(
+            [
                 'success' => new external_value(PARAM_BOOL, 'Whether function execution was successful'),
-                'message' => new external_value(PARAM_TEXT, 'Additional message (mostly error message)')
-            )
+                'message' => new external_value(PARAM_TEXT, 'Additional message (mostly error message)'),
+            ]
         );
     }
 }
