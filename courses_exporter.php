@@ -223,8 +223,11 @@ class courses_exporter extends external_api {
                 $cardcontent->mc_moodle_empfehlungsbild = $metadata['mc_moodle_empfehlungsbild'] ?: $CFG->local_course_explorer_service_fallback_img_url;
                 $cardcontent->mc_moodle_barrierearm_bool = isset($metadata['mc_moodle_barrierearm']) && $metadata['mc_moodle_barrierearm'];
                 $cardcontent->mc_moodle_barrierearm = (int) $cardcontent->mc_moodle_barrierearm_bool;
-                $cardcontent->isdraft_bool = isset($metadata['isdraft']) && $metadata['isdraft'];
-                $cardcontent->isdraft = (int) $cardcontent->isdraft_bool;
+                $cardcontent->mc_moodle_barrierearm_bool = isset($metadata['mc_moodle_barrierearm']) && $metadata['mc_moodle_barrierearm'];
+                $cardcontent->mc_moodle_barrierearm = (int) $cardcontent->mc_moodle_barrierearm_bool;
+                $cardcontent->mc_oer_bool = isset($metadata['mc_oer']) && $metadata['mc_oer'];
+                $cardcontent->mc_oer = (int) $cardcontent->mc_oer_bool;
+                $cardcontent->mc_oer_text = $metadata['mc_oer_text'] ?: '';
                 $cardcontent->mc_moodle_video = self::_format_mintcampus_get_video($course->id) ? self::_get_teaser_endpoint_url('video', $course->id) : null;
                 $cardcontent->mc_moodle_image = self::_format_mintcampus_get_image($course->id) ? self::_get_teaser_endpoint_url('image', $course->id) : self::_evaluate(null);
 
@@ -349,6 +352,9 @@ class courses_exporter extends external_api {
                     'mc_moodle_empfehlungsbild' => new external_value(PARAM_TEXT, "Recommendation image"),
                     'mc_label_bool' => new external_value(PARAM_BOOL, 'produced by MINT-Campus'),
                     'mc_label' => new external_value(PARAM_TEXT, 'produced by MINT-Campus (label text)'),
+                    'mc_oer_bool' => new external_value(PARAM_BOOL, 'OER by MINT-Campus'),
+                    'mc_oer' => new external_value(PARAM_INT, 'OER by MINT-Campus'),
+                    'mc_oer_text' => new external_value(PARAM_INT, 'OER Text'),
                     'mc_format_text' => new external_value(PARAM_TEXT, 'course type text'),
                     'mc_format' => new external_value(PARAM_INT, 'course type id'),
                     'mc_zielgruppe' => new external_multiple_structure(
